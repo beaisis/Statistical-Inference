@@ -1,0 +1,108 @@
+---
+title: Coursera Statistical Inference Project - Part 2
+author: Brian Altman
+date: December 26, 2015
+output: pdf_document
+---
+
+##**Overview**      
+The project analyzes the ToothGrowth data in the R datasets package. The project 
+
+      1) Load the ToothGrowth data
+      2) Perform some basic exploratory data analyses and a basic summary of the data.
+      3) Uses confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose.
+      4) Provides conclusions and the assumptions needed
+
+This file and related code can be found here: https://github.com/beaisis/Statistical-Inference 
+***
+
+####**1) Load the ToothGrowth data**
+Tooth growth data is part of the base R package install.
+```{r data}
+library(ggplot2)
+data(ToothGrowth)
+```
+
+####**2) Perform some basic exploratory data analyses related to supp and dose**
+There are 60 observations of  3 variables:
+```{r Basic}
+
+str(ToothGrowth)
+head(ToothGrowth)
+
+summary(ToothGrowth)
+```
+Means of tooth grown by dose and supp(delivery method)
+```{r Basic2}
+tapply(ToothGrowth$len, list(ToothGrowth$dose,ToothGrowth$supp),mean)
+```
+Plot showing tooth growth by dose and supp:
+
+```{r Basic3, echo=FALSE}
+ggplot(data=ToothGrowth, aes(x=ToothGrowth$dose, y=len, fill=supp)) + geom_boxplot() +
+      facet_grid(. ~ supp) +
+      xlab("Dose (Milligrams)") + ylab("Tooth Length") + ggtitle("Tooth Growth by Supp and Dose")
+```
+The summary tables and boxplot suggests tooth length is positively correlated with the dosage for both supplements.
+
+####**3) Confidence intervals and null hypothesis tests to compare tooth growth by supp and dose**
+
+
+
+*Null hypothesis: No correlation between method of delivery and tooth length.*
+
+The following t-test was conducted:
+```{r T Test}
+t.test(ToothGrowth$len[ToothGrowth$supp=="OJ"], ToothGrowth$len[ToothGrowth$supp=="VC"], paired = FALSE, var.equal = FALSE)
+```
+A P-value of .06 and confidence interval of [-0.171, 7.571] that includes zero, suggests the null hypthesis can not be rejected. There does not appear to be a correlation between method of delivery and tooth length.
+
+
+
+*Null Hypothesis: No correlation between dosage and Tooth Length*. 
+The following models by dose and supp were run:
+
+```{r Dosage, echo=FALSE}
+t_tests <- ""
+dose <-as.factor(ToothGrowth$dose)
+len  <-ToothGrowth$len
+supp <-ToothGrowth$supp
+```
+
+```{r Models}
+t1<-t.test(len[dose==.5 & supp == 'VC'],len[dose==1& supp == 'VC'], paired = FALSE, var.equal = TRUE)
+t_tests <- rbind(t_tests, list('.5~1 mg - VC',  t1$p.value,t1$conf.int[1], t1$conf.int[2]))
+t1<-t.test(len[dose==1 & supp == 'VC'], len[dose==2 & supp == 'VC' ], paired = FALSE, var.equal = TRUE)
+t_tests <- rbind(t_tests, list(' 1~2 mg - VC',  t1$p.value, t1$conf.int[1], t1$conf.int[2]))
+t1<-t.test(len[dose==.5 & supp == 'VC'], len[dose==2 & supp == 'VC'], paired = FALSE, var.equal = TRUE)
+t_tests <- rbind(t_tests, list('.5~2 mg - VC',  t1$p.value,t1$conf.int[1], t1$conf.int[2]))
+
+t1<-t.test(len[dose==.5 & supp == 'OJ'],len[dose==1 & supp == 'OJ'], paired = FALSE, var.equal = TRUE)
+t_tests <- rbind(t_tests, list('.5~1 mg - OJ',  t1$p.value,t1$conf.int[1], t1$conf.int[2]))
+t1<-t.test(len[dose==1 & supp == 'OJ'], len[dose==2 & supp == 'OJ' ], paired = FALSE, var.equal = TRUE)
+t_tests <- rbind(t_tests, list(' 1~2 mg - OJ',  t1$p.value,t1$conf.int[1], t1$conf.int[2]))
+t1<-t.test(len[dose==.5 & supp == 'OJ'], len[dose==2 & supp == 'OJ'], paired = FALSE, var.equal = TRUE)
+t_tests <- rbind(t_tests, list('.5~2 mg - OJ',  t1$p.value,t1$conf.int[1], t1$conf.int[2]))
+colnames(t_tests) = c('Model','p.value','Ci.lower','ci.upper')
+t_tests <- t_tests[2:6,]
+```
+
+Summary of the 6 models that represented the 3 Dose and 2 delivery method combinations:
+
+```{r T Summaries, echo=FALSE}
+t_tests
+```
+
+For all dosage combinations, the p-values are less than .05 and the confidence intervals do not contain zero.The null hypothesis is rejected: Dosages of .5, 1 and 2 do contribute to tooth length increases. 
+
+####**4)Conclusions** 
+
+Assuming random assignment of guinea pigs to different dose level categories and supplement types:
+
+      Supplement type has no effect on tooth growth.
+
+      Increasing the dose level leads to increased tooth growth.
+
+
+
+
